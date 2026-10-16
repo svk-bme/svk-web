@@ -1,0 +1,63 @@
+---
+// Stand-in for the old contact / join us / event application forms until a
+// form backend exists: a pop-up with the SVK email address.
+// Open it with any element that has data-open-modal="<id>".
+import { contactEmail, t, type Locale } from '~/i18n'
+
+interface Props {
+  id: string
+  locale: Locale
+  title: string
+  text: string
+  /** Email subject, defaults to the title. */
+  subject?: string
+}
+
+const { id, locale, title, text, subject = title } = Astro.props
+const mailto = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}`
+---
+
+<dialog
+  id={id}
+  class="modal m-auto w-full max-w-none rounded-lg bg-slate-800 p-0 py-8 text-white md:w-3/4 lg:w-1/2"
+  aria-labelledby={`${id}-title`}
+>
+  <h2 id={`${id}-title`} class="text-center text-4xl font-bold">
+    {title}
+  </h2>
+  <div class="my-8 flex flex-col items-center gap-6 px-6 text-center text-lg">
+    <p>{text}</p>
+    <a href={mailto} class="text-2xl text-cyan underline underline-offset-4 hover:opacity-75">
+      {contactEmail}
+    </a>
+  </div>
+  <form method="dialog" class="flex justify-around">
+    <button class="rounded-lg border-2 border-red-600 bg-white p-3 text-red-600 transition-colors hover:bg-red-600 hover:text-white">
+      {t(locale, 'common.email.close')}
+    </button>
+    <a
+      href={mailto}
+      class="rounded-lg border-2 border-cyan bg-white p-3 text-[#1f8f7c] transition-colors hover:bg-cyan hover:text-white"
+    >
+      {t(locale, 'common.email.button')}
+    </a>
+  </form>
+</dialog>
+
+<script>
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement
+    const opener = target.closest<HTMLElement>('[data-open-modal]')
+    if (opener) {
+      const dialog = document.getElementById(opener.dataset.openModal!) as HTMLDialogElement
+      dialog?.showModal()
+      return
+    }
+    // Clicking the dark backdrop (outside the dialog box) closes the dialog.
+    if (target instanceof HTMLDialogElement && target.open) {
+      const r = target.getBoundingClientRect()
+      const { clientX: x, clientY: y } = event
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) target.close()
+    }
+  })
+</script>

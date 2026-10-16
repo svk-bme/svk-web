@@ -1,0 +1,159 @@
+---
+// Home page event carousel: endless, autoplays every 5 s, the neighbours of the
+// current slide are shown smaller and faded on wider screens.
+import { Image } from 'astro:assets'
+import { localizedText, t, type Locale } from '~/i18n'
+import { eventHref, type Event } from '~/lib/content'
+
+interface Props {
+  locale: Locale
+  events: Event[]
+}
+
+const { locale, events } = Astro.props
+const slides = events.filter((e) => e.data.image)
+// Clones around the real slides make the loop seamless: [last, ...slides, first, second].
+const track =
+  slides.length > 1 ? [slides.at(-1)!, ...slides, slides[0], slides[1] ?? slides[0]] : slides
+const prev = locale === 'hu' ? 'Előző esemény' : 'Previous event'
+const next = locale === 'hu' ? 'Következő esemény' : 'Next event'
+---
+
+<div
+  class="relative w-full overflow-hidden px-[5%]"
+  data-carousel
+  role="region"
+  aria-roledescription="carousel"
+  aria-label={t(locale, 'Index.events')}
+>
+  {slides.length > 1 && (
+    <div class="pointer-events-none absolute bottom-0 left-0 right-0 top-0 z-20 flex items-center justify-between px-0 md:px-20">
+      <button
+        type="button"
+        data-carousel-prev
+        aria-label={prev}
+        class="pointer-events-auto flex h-10 min-w-20 items-center justify-center px-4"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 1 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z"
+          />
+        </svg>
+      </button>
+      <button
+        type="button"
+        data-carousel-next
+        aria-label={next}
+        class="pointer-events-auto flex h-10 min-w-20 items-center justify-center px-4"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z"
+          />
+        </svg>
+      </button>
+    </div>
+  )}
+
+  <div
+    class="flex w-fit flex-nowrap transition-all"
+    style={slides.length > 1 ? 'transform: translateX(-100%)' : undefined}
+    data-carousel-track
+  >
+    {track.map((event, i) => {
+      const title = localizedText(locale, event.data.title, event.data.englishTitle)
+      const isClone = slides.length > 1 && (i === 0 || i > slides.length)
+      // Initial state, same classes as render() in the script below.
+      const current = i === (slides.length > 1 ? 1 : 0)
+      return (
+        <div
+          class:list={[
+            'min-h-full min-w-full transition-all',
+            current
+              ? 'z-10 md:scale-[50%]'
+              : [
+                  'opacity-0 md:scale-[45%] md:opacity-50',
+                  i === 0 ? 'translate-x-[51%]' : '-translate-x-[51%]',
+                ],
+          ]}
+          data-carousel-item
+          aria-hidden={isClone ? 'true' : undefined}
+        >
+          <a href={eventHref(locale, event)} tabindex={isClone ? -1 : undefined}>
+            <Image
+              src={event.data.image!}
+              alt={event.data.imageAlt ?? title}
+              widths={[600, 1000, 1400]}
+              sizes="(min-width: 768px) 45vw, 90vw"
+              loading={i === 1 ? 'eager' : 'lazy'}
+              class="min-h-full min-w-full rounded-lg object-cover shadow-lg"
+            />
+          </a>
+        </div>
+      )
+    })}
+  </div>
+</div>
+
+<script>
+  // Port of the old React MultiCarousel; index 1 is the first real slide.
+  for (const root of document.querySelectorAll<HTMLElement>('[data-carousel]')) {
+    const track = root.querySelector<HTMLElement>('[data-carousel-track]')!
+    const items = [...root.querySelectorAll<HTMLElement>('[data-carousel-item]')]
+    if (items.length < 2) continue
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let index = 1
+    let movingRight = true
+    let timer: number | undefined
+
+    const transitionNeeded = () =>
+      (index === 1 && movingRight) || (index === items.length - 2 && !movingRight)
+
+    const render = () => {
+      const instant = transitionNeeded()
+      track.style.transform = `translateX(${index * -100}%)`
+      track.classList.toggle('transition-none', instant)
+      items.forEach((item, i) => {
+        const current = i === index
+        item.classList.toggle('transition-none', instant)
+        item.classList.toggle('md:scale-[50%]', current)
+        item.classList.toggle('z-10', current)
+        item.classList.toggle('md:scale-[45%]', !current)
+        item.classList.toggle('opacity-0', !current)
+        item.classList.toggle('md:opacity-50', !current)
+        item.classList.toggle('translate-x-[51%]', !current && i === index - 1)
+        item.classList.toggle('-translate-x-[51%]', !current && i !== index - 1)
+      })
+      window.clearTimeout(timer)
+      if (!reduceMotion) timer = window.setTimeout(() => step(1), 5000)
+    }
+
+    const setIndex = (value: number) => {
+      index = value
+      render()
+    }
+
+    const step = (direction: 1 | -1) => {
+      movingRight = direction === 1
+      const value = index + direction
+      if (value === items.length - 1) {
+        setIndex(1)
+        window.setTimeout(() => setIndex(2), 100)
+      } else if (value === 0) {
+        setIndex(items.length - 2)
+        window.setTimeout(() => setIndex(items.length - 3), 100)
+      } else {
+        setIndex(value)
+      }
+    }
+
+    root.querySelector('[data-carousel-prev]')!.addEventListener('click', () => step(-1))
+    root.querySelector('[data-carousel-next]')!.addEventListener('click', () => step(1))
+    render()
+  }
+</script>

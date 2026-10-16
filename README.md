@@ -1,36 +1,102 @@
-# SVK-Web
+# svk.bme.hu
 
-## Configuration
+Website of Schönherz Vállalati Kapcsolatok (SVK). A fully static [Astro](https://docs.astro.build/) site:
+`npm run build` produces plain HTML/CSS/JS in `dist/`, which runs on any static file server
+(GitHub Pages today, SVK's own VM with Caddy later). No server code, no runtime calls to
+outside services, no analytics.
 
-### Step 1. Set up the environment
+## Local development
 
-Before you start development, make sure you have
+Requirements: Node.js 24 LTS (see `.nvmrc`).
 
-- [Node.js](https://nodejs.org/en/) v20 installed
-- After installing run `corepack enable` to use Yarn v4.
-- been added to our Sanity project as a collaborator.
-- [Sanity Studio](https://www.sanity.io/docs/getting-started-with-sanity-cli) installed globally (`npm install --global sanity@latest`).
+```sh
+npm ci            # install the exact versions from package-lock.json
+npm run dev       # dev server on http://localhost:4321
+npm run build     # type check + static build into dist/
+npm run preview   # serve dist/ locally
+npm run format    # prettier
+```
 
-When you run this development server, the changes you make in your frontend and studio configuration will be applied live using hot reloading.
+The build output works with any static server, e.g. `cd dist && python -m http.server`.
 
-Your blog should be up and running on [http://localhost:3000][localhost-3000]! You can create and edit content on [http://localhost:3000/studio][localhost-3000-studio].
+## Structure
 
-[vercel-deploy]: https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fsanity-io%2Fsanity-template-nextjs-clean&repository-name=nextjs-sanity-clean&project-name=nextjs-sanity-clean&demo-title=Clean+Sanity+%2B+Next.js+app&demo-image=https%3A%2F%2Fuser-images.githubusercontent.com%2F835514%2F212771865-7a603a28-0416-45e8-84d3-2aafe02b0c7f.png&demo-description=A+clean+example+of+Next.js+with+embedded+Sanity+ready+for+recomposition.&demo-url=https%3A%2F%2Ftemplate-nextjs-clean.sanity.build&integration-ids=oac_hb2LITYajhRQ0i4QznmKH7gx&external-id=nextjs%3Btemplate%3Dnextjs-sanity-clean
-[integration]: https://www.sanity.io/docs/vercel-integration?utm_source=github.com&utm_medium=referral&utm_campaign=nextjs-v3vercelstarter
-[`.env.local.example`]: .env.local.example
-[nextjs]: https://github.com/vercel/next.js
-[sanity-create]: https://www.sanity.io/get-started/create-project?utm_source=github.com&utm_medium=referral&utm_campaign=nextjs-v3vercelstarter
-[sanity-deployment]: https://www.sanity.io/docs/deployment?utm_source=github.com&utm_medium=referral&utm_campaign=nextjs-v3vercelstarter
-[sanity-homepage]: https://www.sanity.io?utm_source=github.com&utm_medium=referral&utm_campaign=nextjs-v3vercelstarter
-[sanity-community]: https://slack.sanity.io/
-[sanity-schema-types]: https://www.sanity.io/docs/schema-types?utm_source=github.com&utm_medium=referral&utm_campaign=nextjs-v3vercelstarter
-[sanity-github]: https://github.com/sanity-io/sanity/discussions
-[sanity-groq]: https://www.sanity.io/docs/groq?utm_source=github.com&utm_medium=referral&utm_campaign=nextjs-v3vercelstarter
-[sanity-content-modelling]: https://www.sanity.io/docs/content-modelling?utm_source=github.com&utm_medium=referral&utm_campaign=nextjs-v3vercelstarter
-[sanity-webhooks]: https://www.sanity.io/docs/webhooks?utm_source=github.com&utm_medium=referral&utm_campaign=nextjs-v3vercelstarter
-[localhost-3000]: http://localhost:3000
-[localhost-3000-studio]: http://localhost:3000/studio
-[vercel-isr]: https://nextjs.org/blog/next-12-1#on-demand-incremental-static-regeneration-beta
-[vercel]: https://vercel.com
-[vercel-github]: https://github.com/vercel/next.js/discussions
-[app-dir]: https://beta.nextjs.org/docs/routing/fundamentals#the-app-directory
+```
+src/
+  content/            the site content (one YAML file per entry, images next to it)
+    events/           events: <slug>.yaml -> /event/<slug>
+    members/          members: <slug>.yaml -> /member/<slug>
+    pictures/         other pictures (about page banner)
+  content.config.ts   schemas of the content files
+  i18n/               UI strings (hu.json, en.json) and language helpers
+  pages/              routes: Hungarian at /, English at /en/
+  views/              page bodies shared by both languages
+  components/         navbar, footer, event tile, carousel, email pop-up, ...
+  icons/              SVG icons and logos
+public/               files copied as-is (favicons, Lottie animations, CNAME)
+scripts/              export-sanity.mjs (one-time Sanity export)
+```
+
+## Languages and URLs
+
+Hungarian is the default language and keeps the old URLs (`/`, `/events`, `/about`,
+`/event/<slug>`, `/member/<slug>`). English is the same path under `/en/` (`/en/events`, ...).
+The language switcher in the navbar links to the same page in the other language.
+
+UI strings are in `src/i18n/hu.json` and `src/i18n/en.json`. Content has Hungarian fields
+plus optional `english*` fields; when an English field is empty the Hungarian text is shown.
+
+## Editing content
+
+Edit the YAML files in `src/content/` (locally or in the GitHub web editor), commit to
+`master`, and the site redeploys automatically. All fields are listed with comments in
+`src/content.config.ts`; the build fails with a clear message if a file is invalid.
+
+**Add an event:** create `src/content/events/<slug>.yaml` and put the image next to it:
+
+```yaml
+title: 24. Simonyi Konferencia
+englishTitle: 24th Simonyi Conference
+isActive: dateDependent # active | inactive | dateDependent
+datetime: 2027-03-23T09:00:00.000Z # UTC; shown in Budapest time
+location: BME I épület
+lecturer: 20+
+description: Magyarország legnagyobb egyetemi hallgatók által szervezett technológiai konferenciája.
+image: ./24-simonyi-konferencia.png
+spotLink: https://spot.sch.bme.hu/... # optional, photo album
+externalLink: https://... # optional, tiles link here instead of the event page
+```
+
+`dateDependent` events count as current until their `datetime`. Because the site is static,
+this is evaluated at build time; the deploy workflow rebuilds every night, so events move
+to "past" by the next morning (or run the workflow manually).
+
+**Add a member:** create `src/content/members/<slug>.yaml` (fields: `firstName`, `lastName`,
+`position`, `englishPosition`, `orderPriority` (lower comes first), `description`,
+`englishDescription`, `picture`, `linkedIn`).
+
+Images are optimized (resized, converted to WebP) at build time, so originals can be added
+as they are; keep them reasonably sized (max. ~2000 px wide). Only add images the site uses.
+
+## Forms
+
+The old contact / join us / event application forms posted to n8n, which is being retired.
+Until a form service exists, the buttons open a pop-up showing `kapcsolat@svk.bme.hu`
+(configured in `src/i18n/index.ts`). The old form code is in the git history (before the
+Astro migration commit).
+
+## Deployment
+
+`.github/workflows/deploy.yml` builds and deploys to GitHub Pages on every push to `master`,
+nightly, and on manual dispatch. `public/CNAME` sets the custom domain `svk.bme.hu`.
+Pull requests get a build check (`check.yml`).
+
+Repository settings needed once: _Settings → Pages → Source: GitHub Actions_, and the custom
+domain `svk.bme.hu` (HTTPS enforced).
+
+## Sanity export (historical)
+
+The content was exported once from the former Sanity CMS with `npm run export:sanity`
+(reads the public dataset, writes `src/content/` and downloads the images). Re-running it
+**overwrites** `src/content/events`, `members` and `pictures`, so only use it if Sanity is
+still the source of truth.

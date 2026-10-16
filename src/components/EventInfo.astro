@@ -1,0 +1,37 @@
+---
+// Date, location and lecturer rows of an event (used on tiles and the event page).
+import CalendarIcon from '~/icons/calendar.svg'
+import LecturerIcon from '~/icons/lecturer.svg'
+import LocationIcon from '~/icons/location.svg'
+import { formatDateTime, localizedText, type Locale } from '~/i18n'
+import type { Event } from '~/lib/content'
+
+interface Props {
+  locale: Locale
+  event: Event
+}
+
+const { locale, event } = Astro.props
+const { datetime, location, lecturer, englishLecturer } = event.data
+---
+
+<div class="flex flex-col space-y-2">
+  {datetime && (
+    <div class="flex flex-row flex-nowrap space-x-2">
+      <CalendarIcon aria-hidden="true" class="shrink-0" />
+      <time datetime={datetime.toISOString()}>{formatDateTime(datetime)}</time>
+    </div>
+  )}
+  {location && (
+    <div class="flex flex-row flex-nowrap space-x-2">
+      <LocationIcon aria-hidden="true" class="shrink-0" />
+      <span class="text-sm">{location}</span>
+    </div>
+  )}
+  {lecturer && (
+    <div class="flex flex-row flex-nowrap space-x-2">
+      <LecturerIcon aria-hidden="true" class="shrink-0" />
+      <span>{localizedText(locale, lecturer, englishLecturer)}</span>
+    </div>
+  )}
+</div>
