@@ -1,0 +1,106 @@
+---
+import '@fontsource/montserrat/latin-500.css'
+import '@fontsource/montserrat/latin-ext-500.css'
+import '~/styles/global.css'
+import { localePath, pathWithoutLocale, t, type Locale } from '~/i18n'
+import BackgroundWaves from '~/components/BackgroundWaves.astro'
+import EmailModal from '~/components/EmailModal.astro'
+import Footer from '~/components/Footer.astro'
+import Navbar from '~/components/Navbar.astro'
+
+interface Props {
+  locale: Locale
+  title?: string
+  description?: string
+  /** Absolute or root-relative URL of the social preview image. */
+  image?: string
+  /** The about page has a banner picture above the blue background. */
+  withBanner?: boolean
+  /** The home page hides the navbar until the first scroll. */
+  hideNavbarUntilScroll?: boolean
+}
+
+const {
+  locale,
+  title,
+  description = t(locale, 'meta.description'),
+  image,
+  withBanner = false,
+  hideNavbarUntilScroll = false,
+} = Astro.props
+const pageTitle = title ? `${title} | SVK` : `SVK – ${t(locale, 'common.footer.svk')}`
+const path = pathWithoutLocale(Astro.url.pathname)
+const alternates = (['hu', 'en'] as const).map((l) => ({
+  locale: l,
+  href: new URL(localePath(l, path), Astro.site).href,
+}))
+const ogImage = new URL(image ?? '/favicon/ms-icon-310x310.png', Astro.site).href
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={new URL(localePath(locale, path), Astro.site).href} />
+    {alternates.map((a) => (
+      <link rel="alternate" hreflang={a.locale} href={a.href} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={alternates[0].href} />
+    <link rel="icon" href="/favicon/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="apple-touch-icon" href="/favicon/apple-icon-180x180.png" />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+    <meta name="theme-color" content="#000000" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SVK" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content={locale === 'hu' ? 'hu_HU' : 'en_US'} />
+  </head>
+  <body>
+    {withBanner ? (
+      <div class="relative z-20">
+        <Navbar locale={locale} />
+        <slot name="banner" />
+        <main
+          class="relative z-10 overflow-hidden bg-svk_blue"
+          style="clip-path: inset(0 0 -1px 0)"
+        >
+          <BackgroundWaves />
+          <div class="relative z-10">
+            <slot />
+          </div>
+        </main>
+        <Footer locale={locale} />
+      </div>
+    ) : (
+      <div class="flex min-h-screen flex-col bg-svk_blue">
+        <BackgroundWaves />
+        <div class="relative z-20 flex grow flex-col">
+          <Navbar locale={locale} hideUntilScroll={hideNavbarUntilScroll} />
+          <main class="grow">
+            <slot />
+          </main>
+          <Footer locale={locale} />
+        </div>
+      </div>
+    )}
+    <EmailModal
+      id="contact-modal"
+      locale={locale}
+      title={t(locale, 'common.contact.mainTitle')}
+      text={t(locale, 'common.email.contact')}
+    />
+    <EmailModal
+      id="join-modal"
+      locale={locale}
+      title={t(locale, 'common.joinUs.mainTitle')}
+      text={t(locale, 'common.email.joinUs')}
+    />
+    <slot name="modals" />
+  </body>
+</html>

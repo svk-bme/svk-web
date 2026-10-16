@@ -1,0 +1,38 @@
+---
+// The animated waves in the corners (Lottie animations from public/animations).
+---
+
+<div
+  class="fixed left-0 top-0 origin-top-left scale-150 overflow-hidden sm:scale-[200%] md:scale-[300%]"
+  aria-hidden="true"
+>
+  <div data-lottie="/animations/Waves-Single.json"></div>
+</div>
+<div
+  class="fixed -bottom-48 right-0 origin-bottom-right scale-150 overflow-hidden sm:scale-[200%] md:scale-[300%]"
+  aria-hidden="true"
+>
+  <div data-lottie="/animations/Waves-Double.json"></div>
+</div>
+
+<script>
+  // The animations are decoration: load them only once the page content is done.
+  const start = async () => {
+    const containers = document.querySelectorAll<HTMLElement>('[data-lottie]')
+    const { default: lottie } = await import('lottie-web/build/player/lottie_light')
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    for (const container of containers) {
+      lottie.loadAnimation({
+        container,
+        path: container.dataset.lottie,
+        renderer: 'svg',
+        loop: true,
+        autoplay: !reduceMotion,
+      })
+    }
+  }
+  const idle = () =>
+    'requestIdleCallback' in window ? requestIdleCallback(start) : setTimeout(start, 200)
+  if (document.readyState === 'complete') idle()
+  else window.addEventListener('load', idle, { once: true })
+</script>

@@ -1,0 +1,73 @@
+---
+// Event card: cover image that slides up on hover (or via the toggle button on
+// touch screens) to reveal the date, location and lecturer.
+import { Image } from 'astro:assets'
+import HamburgerIcon from '~/icons/hamburger.svg'
+import PictureIcon from '~/icons/picture.svg'
+import { localizedText, type Locale } from '~/i18n'
+import { eventHref, type Event } from '~/lib/content'
+import EventInfo from './EventInfo.astro'
+
+interface Props {
+  locale: Locale
+  event: Event
+  /** Load the image right away (for tiles visible without scrolling). */
+  eager?: boolean
+}
+
+const { locale, event, eager = false } = Astro.props
+const { image, imageAlt, spotLink, englishTitle } = event.data
+const title = localizedText(locale, event.data.title, englishTitle)
+const details = locale === 'hu' ? 'Részletek' : 'Details'
+---
+
+{image && (
+  <article
+    class="event-tile relative max-w-2xl overflow-hidden rounded-md bg-black/70 backdrop-blur-sm"
+    data-open="false"
+  >
+    <div class="relative h-full">
+      <a href={eventHref(locale, event)} class="tile-shift block cursor-pointer">
+        <Image
+          src={image}
+          alt={imageAlt ?? title}
+          title={title}
+          widths={[400, 700, 1000]}
+          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+          loading={eager ? 'eager' : 'lazy'}
+          class="h-auto max-h-full w-full rounded-t-md"
+        />
+      </a>
+      <div class="tile-shift absolute bottom-0 right-0 z-20 m-4 flex w-fit items-center justify-between gap-2">
+        {spotLink && (
+          <a href={spotLink} target="_blank" rel="noopener" aria-label={`${title} – Spot`}>
+            <PictureIcon aria-hidden="true" />
+          </a>
+        )}
+        <button
+          type="button"
+          class="tile-toggle"
+          data-tile-toggle
+          aria-expanded="false"
+          aria-label={`${title} – ${details}`}
+        >
+          <HamburgerIcon aria-hidden="true" width="40" height="40" />
+        </button>
+      </div>
+      <div class="tile-info absolute bottom-0 left-0 right-0 p-4">
+        <EventInfo locale={locale} event={event} />
+      </div>
+    </div>
+  </article>
+)}
+
+<script>
+  document.addEventListener('click', (e) => {
+    const button = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-tile-toggle]')
+    if (!button) return
+    const tile = button.closest<HTMLElement>('.event-tile')!
+    const open = tile.dataset.open !== 'true'
+    tile.dataset.open = String(open)
+    button.setAttribute('aria-expanded', String(open))
+  })
+</script>

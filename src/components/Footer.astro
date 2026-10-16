@@ -1,0 +1,76 @@
+---
+import FacebookIcon from '~/icons/facebook.svg'
+import HeartIcon from '~/icons/heart.svg'
+import InstagramIcon from '~/icons/instagram.svg'
+import KirDevLogo from '~/icons/kir-dev.svg'
+import LinkedInIcon from '~/icons/linkedin.svg'
+import MailIcon from '~/icons/mail.svg'
+import { localePath, pathWithoutLocale, t, type Locale } from '~/i18n'
+import { routes, socials } from '~/lib/routes'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const path = pathWithoutLocale(Astro.url.pathname)
+const socialLinks = [
+  { label: 'Facebook', icon: FacebookIcon, href: socials.facebook },
+  { label: 'LinkedIn', icon: LinkedInIcon, href: socials.linkedIn },
+  { label: 'Instagram', icon: InstagramIcon, href: socials.instagram },
+]
+---
+
+<footer class="relative z-40 flex flex-col gap-2 bg-black px-[8.5%]">
+  <div class="my-8 flex flex-col-reverse justify-between gap-8 sm:flex-row sm:gap-3">
+    <div class="flex flex-1 flex-col gap-5 text-center sm:gap-2 sm:text-left">
+      {routes.map((route) => (
+        <a
+          href={localePath(locale, route.href)}
+          class={route.href === path ? 'underline' : undefined}
+          aria-current={route.href === path ? 'page' : undefined}
+        >
+          {t(locale, `common.routes.${route.key}`)}
+        </a>
+      ))}
+    </div>
+    <div class="flex-1">
+      <div class="flex justify-center">
+        <a href="https://kir-dev.hu/" class="pb-4" aria-label="Kir-Dev">
+          <KirDevLogo />
+        </a>
+      </div>
+      <div class="mx-auto text-center">
+        Made with <HeartIcon aria-label="love" role="img" /> by Kir-Dev
+      </div>
+    </div>
+    <div class="flex flex-1 flex-col gap-5 text-center sm:gap-2 sm:text-left">
+      <div class="mx-auto md:ml-auto">
+        <p>{t(locale, 'common.footer.svk')}</p>
+        <p>{t(locale, 'common.footer.address0')}</p>
+        <p>{t(locale, 'common.footer.address1')}</p>
+        <div class="flex flex-row justify-between pt-2">
+          {socialLinks.map(({ label, icon: Icon, href }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener"
+              aria-label={label}
+              class="flex h-10 w-10 items-center justify-center hover:opacity-75"
+            >
+              <Icon class="h-full w-auto fill-current" />
+            </a>
+          ))}
+          <button
+            type="button"
+            data-open-modal="contact-modal"
+            aria-label={t(locale, 'common.contact.mainTitle')}
+            class="h-auto w-auto hover:opacity-75"
+          >
+            <MailIcon />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

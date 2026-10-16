@@ -1,0 +1,137 @@
+---
+import CloseIcon from '~/icons/close.svg'
+import HamburgerIcon from '~/icons/hamburger.svg'
+import SvkLogo from '~/icons/svk-logo.svg'
+import { localePath, pathWithoutLocale, t, type Locale } from '~/i18n'
+import { routes } from '~/lib/routes'
+
+interface Props {
+  locale: Locale
+  hideUntilScroll?: boolean
+}
+
+const { locale, hideUntilScroll = false } = Astro.props
+const path = pathWithoutLocale(Astro.url.pathname)
+const otherLocale: Locale = locale === 'hu' ? 'en' : 'hu'
+const linkClass = (href: string) => (href === path ? 'underline' : undefined)
+---
+
+<nav class="sticky top-0 z-40">
+  <div
+    data-navbar
+    data-hidden={hideUntilScroll ? 'true' : undefined}
+    class="flex w-screen justify-between bg-black px-[8.5%] py-3 transition-all data-[hidden]:-translate-y-20"
+  >
+    <a href={localePath(locale, '/')} aria-label={t(locale, 'common.navbar.home')}>
+      <SvkLogo />
+    </a>
+    <div class="flex w-fit items-center justify-around gap-5 text-xl lg:gap-10">
+      <div class="block h-fit md:hidden">
+        <button
+          type="button"
+          data-menu-toggle
+          aria-expanded="false"
+          aria-controls="mobile-menu"
+          aria-label={t(locale, 'common.navbar.openMenu')}
+          data-label-open={t(locale, 'common.navbar.openMenu')}
+          data-label-close={t(locale, 'common.navbar.closeMenu')}
+          class="group relative flex h-10 min-w-20 items-center justify-center rounded-xl px-4"
+        >
+          <span class="absolute transition-all group-aria-expanded:opacity-0">
+            <HamburgerIcon />
+          </span>
+          <span class="absolute opacity-0 transition-all group-aria-expanded:opacity-100">
+            <CloseIcon />
+          </span>
+        </button>
+        <div
+          id="mobile-menu"
+          data-menu
+          class="invisible absolute right-2 top-full rounded bg-black p-5 opacity-0 transition-all data-[open]:visible data-[open]:opacity-100"
+        >
+          {routes.map((route) => (
+            <a
+              href={localePath(locale, route.href)}
+              class:list={['text-md mb-3 block', linkClass(route.href)]}
+              aria-current={route.href === path ? 'page' : undefined}
+            >
+              {t(locale, `common.routes.${route.key}`)}
+            </a>
+          ))}
+          <button type="button" data-open-modal="join-modal">
+            {t(locale, 'common.navbar.joinButtonTitle')}
+          </button>
+          <div class="my-5">
+            <button
+              type="button"
+              data-open-modal="contact-modal"
+              class="rounded-full bg-cyan p-3 text-svk_blue"
+            >
+              {t(locale, 'common.navbar.contactButtonTitle')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hidden items-center justify-around gap-5 md:flex">
+        {routes.map((route) => (
+          <a
+            href={localePath(locale, route.href)}
+            class={linkClass(route.href)}
+            aria-current={route.href === path ? 'page' : undefined}
+          >
+            {t(locale, `common.routes.${route.key}`)}
+          </a>
+        ))}
+        <button type="button" data-open-modal="join-modal">
+          {t(locale, 'common.navbar.joinButtonTitle')}
+        </button>
+        <button
+          type="button"
+          data-open-modal="contact-modal"
+          class="rounded-full bg-cyan p-3 text-svk_blue"
+        >
+          {t(locale, 'common.navbar.contactButtonTitle')}
+        </button>
+      </div>
+      <a
+        href={localePath(otherLocale, path)}
+        hreflang={otherLocale}
+        lang={otherLocale}
+        class="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-700/40 text-sm text-zinc-300 transition-opacity hover:opacity-80"
+      >
+        <span aria-hidden="true">{t(locale, 'common.navbar.locale')}</span>
+        <span class="sr-only">{t(otherLocale, 'common.navbar.langSwitcher')}</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<script>
+  const navbar = document.querySelector<HTMLElement>('[data-navbar]')!
+  if (navbar.dataset.hidden) {
+    const show = () => {
+      delete navbar.dataset.hidden
+      document.removeEventListener('scroll', show)
+    }
+    document.addEventListener('scroll', show)
+    // Keyboard users tabbing into the navbar should see it.
+    navbar.addEventListener('focusin', show)
+  }
+
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]')!
+  const menu = document.querySelector<HTMLElement>('[data-menu]')!
+  const setOpen = (open: boolean) => {
+    toggle.setAttribute('aria-expanded', String(open))
+    toggle.setAttribute('aria-label', open ? toggle.dataset.labelClose! : toggle.dataset.labelOpen!)
+    if (open) menu.dataset.open = ''
+    else delete menu.dataset.open
+  }
+  toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'))
+  menu.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('[data-open-modal]')) setOpen(false)
+  })
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setOpen(false)
+  })
+</script>

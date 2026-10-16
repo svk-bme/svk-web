@@ -2,31 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    overflow-x: hidden !important;
-    font-family: 'Montserrat', sans-serif;
-    color: #FFF;
-    fill: #FFF;
-}
-
 @layer base {
-    body {
-        @apply bg-background text-foreground;
-    }
+  html {
+    background-color: #000;
+    color-scheme: dark;
+  }
 
-    *::-webkit-scrollbar {
-        @apply w-3 h-3;
-    }
+  body {
+    overflow-x: hidden;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    background-color: #000;
+    color: #fff;
+    fill: #fff;
+  }
 
-    *::-webkit-scrollbar-track {
-        @apply bg-black;
-    }
+  *::-webkit-scrollbar {
+    @apply h-3 w-3;
+  }
 
-    *::-webkit-scrollbar-thumb {
-        @apply bg-[#0d9488] rounded-lg;
-    }
+  *::-webkit-scrollbar-track {
+    @apply bg-black;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    @apply rounded-lg bg-[#0d9488];
+  }
+
+  :focus-visible {
+    outline: 2px solid #3dcab1;
+    outline-offset: 2px;
+  }
 }
 
-.custom-list ul {
-    padding-left: 10px;
+/* Event tile: details slide up on hover (mouse) or when toggled (touch). */
+.event-tile .tile-shift {
+  transition: transform 150ms;
+}
+.event-tile .tile-info {
+  transition: transform 150ms;
+  transform: translateY(100%);
+}
+.event-tile[data-open='true'] .tile-shift {
+  transform: translateY(-40%);
+}
+.event-tile[data-open='true'] .tile-info {
+  transform: translateY(0);
+}
+@media (hover: hover) {
+  .event-tile:hover .tile-shift,
+  .event-tile:focus-within .tile-shift {
+    transform: translateY(-40%);
+  }
+  .event-tile:hover .tile-info,
+  .event-tile:focus-within .tile-info {
+    transform: translateY(0);
+  }
+  .event-tile .tile-toggle {
+    display: none;
+  }
+}
+
+/* About page banner: taller than the picture on wider screens. */
+.about-banner {
+  aspect-ratio: var(--aspect);
+}
+@media (min-width: 641px) {
+  .about-banner {
+    aspect-ratio: calc(var(--aspect) * 1.4);
+  }
+}
+@media (min-width: 769px) {
+  .about-banner {
+    aspect-ratio: calc(var(--aspect) * 1.6);
+  }
+}
+@media (min-width: 1025px) {
+  .about-banner {
+    aspect-ratio: calc(var(--aspect) * 1.8);
+  }
+}
+@media (min-width: 1281px) {
+  .about-banner {
+    aspect-ratio: calc(var(--aspect) * 2);
+  }
+}
+
+/* Email pop-up (native <dialog>). */
+dialog.modal::backdrop {
+  background: rgb(0 0 0 / 0.8);
+}
+dialog.modal[open] {
+  animation: modal-in 300ms ease-out;
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

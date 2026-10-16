@@ -1,42 +1,16 @@
-import { nextui, NextUIPluginConfig } from '@nextui-org/react'
-import { Config } from 'tailwindcss/types/config'
+import type { Config } from 'tailwindcss'
 
-const config = {
-  content: [
-    './src/**/*.{js,ts,jsx,tsx,mdx}',
-    './node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}',
-  ],
+export default {
+  content: ['./src/**/*.{astro,html,js,ts,md}'],
   theme: {
     extend: {
       colors: {
         cyan: '#3dcab1',
-        svk_blue: '#071c42'
+        svk_blue: '#071c42',
+      },
+      fontFamily: {
+        sans: ['Montserrat', 'sans-serif'],
       },
     },
   },
-  darkMode: 'class',
-  plugins: [
-    nextui({
-      themes: {
-        light: {
-          colors: {
-            primary: {
-              DEFAULT: '#f97316',
-              foreground: '#000000',
-            },
-          },
-        },
-        dark: {
-          colors: {
-            primary: {
-              DEFAULT: '#ea580c',
-              foreground: '#ffffff',
-            },
-          },
-        },
-      },
-    } satisfies NextUIPluginConfig),
-  ],
 } satisfies Config
-
-export default config
